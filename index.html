@@ -1,15 +1,3 @@
-Identifiquei o motivo exato pelo qual termos específicos como *"Tiro no Escuro"* não apareciam na busca:
-
-Na versão anterior, o script lia **apenas a aba "Geral"** da planilha. A aba "Geral" foca nos totais por confraria e litros, enquanto nomes detalhados de cervejas específicas (como *"Tiro no Escuro"*) geralmente ficam registrados em outras abas (ou em colunas de detalhamento mais profundo que precisavam de uma leitura mais ampla de texto em todas as células).
-
-Ajustei o código para que o aplicativo web agora faça uma varredura muito mais inteligente:
-
-1. **Busca Textual Profunda**: Analisa e indexa **todos os textos de todas as colunas** de cada linha (garantindo que qualquer nome de cerveja, como *"Tiro no Escuro"*, notas ou observações sejam encontrados instantaneamente).
-2. **Normalização de Acentos**: A busca agora desconsidera maiúsculas, minúsculas e acentos (ou seja, pesquisar `tiro no escuro`, `TIRO NO ESCURO` ou `tiro` vai encontrar o resultado perfeitamente).
-
-Basta copiar o código abaixo, salvar como `index.html` e atualizar no seu repositório do GitHub:
-
-```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -711,5 +699,3 @@ Basta copiar o código abaixo, salvar como `index.html` e atualizar no seu repos
     </script>
 </body>
 </html>
-
-```
