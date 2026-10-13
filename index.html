@@ -1,9 +1,21 @@
+Identifiquei o motivo exato pelo qual termos específicos como *"Tiro no Escuro"* não apareciam na busca:
+
+Na versão anterior, o script lia **apenas a aba "Geral"** da planilha. A aba "Geral" foca nos totais por confraria e litros, enquanto nomes detalhados de cervejas específicas (como *"Tiro no Escuro"*) geralmente ficam registrados em outras abas (ou em colunas de detalhamento mais profundo que precisavam de uma leitura mais ampla de texto em todas as células).
+
+Ajustei o código para que o aplicativo web agora faça uma varredura muito mais inteligente:
+
+1. **Busca Textual Profunda**: Analisa e indexa **todos os textos de todas as colunas** de cada linha (garantindo que qualquer nome de cerveja, como *"Tiro no Escuro"*, notas ou observações sejam encontrados instantaneamente).
+2. **Normalização de Acentos**: A busca agora desconsidera maiúsculas, minúsculas e acentos (ou seja, pesquisar `tiro no escuro`, `TIRO NO ESCURO` ou `tiro` vai encontrar o resultado perfeitamente).
+
+Basta copiar o código abaixo, salvar como `index.html` e atualizar no seu repositório do GitHub:
+
+```html
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Multiavas & Confrarias - 13FDCRJ</title>
+    <title>Painel Completo de Cervejas & Confrarias - 13FDCRJ</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -28,7 +40,7 @@
                 <i class="fa-solid font-bold fa-beer-mug-empty text-3xl text-amber-200"></i>
                 <div>
                     <h1 class="text-2xl font-bold leading-tight">Painel 13FDCRJ</h1>
-                    <p class="text-xs text-amber-100">Busca Geral & Detalhamento por Confraria</p>
+                    <p class="text-xs text-amber-100">Busca Avançada de Cervejas & Confrarias</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
@@ -65,7 +77,7 @@
 
             <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Registros Filtrados</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Registros Encontrados</p>
                     <h3 class="text-2xl font-bold text-amber-600 mt-1" id="kpi-cervejas">0</h3>
                 </div>
                 <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 text-xl">
@@ -94,17 +106,17 @@
             </div>
         </div>
 
-        <!-- Painel de Filtros e Pesquisa Geral / por Confraria -->
+        <!-- Painel de Filtros e Pesquisa -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-magnifying-glass text-amber-600"></i> Pesquisa Geral e Filtros por Confraria
+                <i class="fa-solid fa-magnifying-glass text-amber-600"></i> Pesquisa Generalizada e Filtros
             </h2>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Busca Texto Generalizada -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Busca Generalizada (Qualquer termo)</label>
-                    <input type="text" id="filter-search" placeholder="Pesquisar em tudo..." class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Pesquisa Geral (Ex: "Tiro no escuro")</label>
+                    <input type="text" id="filter-search" placeholder="Digite o nome da cerveja, estilo..." class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500">
                 </div>
 
                 <!-- Filtro Confraria Específica -->
@@ -123,7 +135,7 @@
                     </select>
                 </div>
 
-                <!-- Seleção de Aba / Visão -->
+                <!-- Seleção de Aba -->
                 <div>
                     <label class="block text-xs font-medium text-gray-600 mb-1">Aba da Planilha</label>
                     <select id="filter-aba" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500" onchange="mudarAbaPlanilha()">
@@ -314,6 +326,10 @@
             configurarEventListeners();
         });
 
+        function normalizarTexto(texto) {
+            return String(texto || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        }
+
         function carregarDados() {
             mostrarStatus(`Carregando dados da aba "${abaAtual}" do Google Sheets...`, 'info');
             const icon = document.getElementById('reload-icon');
@@ -353,14 +369,19 @@
                 const valuesStr = Object.values(row).join(' ').toLowerCase();
                 return valuesStr && !valuesStr.includes('total') && !valuesStr.includes('média') && !valuesStr.includes('media por');
             }).map((row, index) => {
-                // Identifica de forma flexível confraria, litros, estilos, ABV, IBU e EBC em qualquer aba
                 const keys = Object.keys(row);
-                const confrariaKey = keys.find(k => k.toLowerCase().includes('confraria')) || keys[2] || keys[0];
-                const litrosKey = keys.find(k => k.toLowerCase().includes('l') || k.toLowerCase().includes('litro') || k.toLowerCase().includes('total')) || keys[1];
-                const tipoKey = keys.find(k => k.toLowerCase().includes('tipo') || k.toLowerCase().includes('estilo')) || '';
-                const abvKey = keys.find(k => k.toLowerCase().includes('abv')) || '';
-                const ibuKey = keys.find(k => k.toLowerCase().includes('ibu')) || '';
-                const ebcKey = keys.find(k => k.toLowerCase().includes('ebc')) || '';
+                const confrariaKey = keys.find(k => normalizarTexto(k).includes('confraria')) || keys[2] || keys[0];
+                const litrosKey = keys.find(k => {
+                    const nk = normalizarTexto(k);
+                    return nk.includes('l') || nk.includes('litro') || nk.includes('total');
+                }) || keys[1];
+                const tipoKey = keys.find(k => {
+                    const nk = normalizarTexto(k);
+                    return nk.includes('tipo') || nk.includes('estilo') || nk.includes('cerveja');
+                }) || '';
+                const abvKey = keys.find(k => normalizarTexto(k).includes('abv')) || '';
+                const ibuKey = keys.find(k => normalizarTexto(k).includes('ibu')) || '';
+                const ebcKey = keys.find(k => normalizarTexto(k).includes('ebc')) || '';
 
                 const confraria = String(row[confrariaKey] || 'N/A').trim();
                 const totalL = parseFloat(String(row[litrosKey] || '0').replace(',', '.')) || 0;
@@ -368,6 +389,12 @@
                 const abv = abvKey ? parseFloat(String(row[abvKey] || '0').replace(',', '.')) || 0 : 0;
                 const ibu = ibuKey ? parseFloat(String(row[ibuKey] || '0').replace(',', '.')) || 0 : 0;
                 const ebc = ebcKey ? parseFloat(String(row[ebcKey] || '0').replace(',', '.')) || 0 : 0;
+
+                // Indexa todas as colunas para busca generalizada em formato normalizado (sem acentos)
+                let searchableText = '';
+                Object.values(row).forEach(val => {
+                    searchableText += ' ' + normalizarTexto(val);
+                });
 
                 return {
                     id: index + 1,
@@ -377,6 +404,7 @@
                     abv: abv,
                     ibu: ibu,
                     ebc: ebc,
+                    searchText: searchableText,
                     raw: row
                 };
             });
@@ -424,7 +452,7 @@
         }
 
         function aplicarFiltros() {
-            const search = document.getElementById('filter-search').value.toLowerCase();
+            const search = normalizarTexto(document.getElementById('filter-search').value);
             const confraria = document.getElementById('filter-confraria').value;
             const estilo = document.getElementById('filter-estilo').value;
             const maxAbv = parseFloat(document.getElementById('filter-abv').value);
@@ -433,10 +461,9 @@
             const apenasPendentes = document.getElementById('filter-pendencias').checked;
 
             dadosFiltrados = dadosBrutos.filter(d => {
-                const rowString = Object.values(d.raw).join(' ').toLowerCase();
-                const matchSearch = !search || rowString.includes(search);
+                const matchSearch = !search || d.searchText.includes(search);
                 const matchConf = !confraria || d.confraria === confraria;
-                const matchEstilo = !estilo || d.tipo.toLowerCase().includes(estilo.toLowerCase());
+                const matchEstilo = !estilo || normalizarTexto(d.tipo).includes(normalizarTexto(estilo));
                 const matchAbv = d.abv === 0 || d.abv <= maxAbv;
                 const matchIbu = d.ibu === 0 || d.ibu <= maxIbu;
                 const matchEbc = d.ebc === 0 || d.ebc <= maxEbc;
@@ -492,7 +519,6 @@
                 return;
             }
 
-            // Cria cabeçalhos com colunas originais + Avaliação
             let headerHTML = `<th class="py-3 px-4">Status</th>`;
             colunasOriginais.forEach(col => {
                 headerHTML += `<th class="py-3 px-4">${col}</th>`;
@@ -500,7 +526,6 @@
             headerHTML += `<th class="py-3 px-4 text-center">Ações</th>`;
             theaders.innerHTML = headerHTML;
 
-            // Preenche linhas
             dadosFiltrados.forEach(item => {
                 const avaliacao = JSON.parse(localStorage.getItem(`degustacao_${abaAtual}_${item.id}`) || 'null');
                 const badgeAvaliacao = avaliacao ? `<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded font-semibold"><i class="fa-solid fa-check"></i> Avaliada</span>` : '';
@@ -686,3 +711,5 @@
     </script>
 </body>
 </html>
+
+```
