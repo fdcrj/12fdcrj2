@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Completo de Cervejas & Confrarias - 13FDCRJ</title>
+    <title>Painel Multiavas & Confrarias - 13FDCRJ</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
@@ -28,7 +28,7 @@
                 <i class="fa-solid font-bold fa-beer-mug-empty text-3xl text-amber-200"></i>
                 <div>
                     <h1 class="text-2xl font-bold leading-tight">Painel 13FDCRJ</h1>
-                    <p class="text-xs text-amber-100">Gestão Completa & Degustação de Cervejas</p>
+                    <p class="text-xs text-amber-100">Busca Geral & Detalhamento por Confraria</p>
                 </div>
             </div>
             <div class="flex items-center space-x-2">
@@ -45,7 +45,7 @@
     <!-- Conteúdo Principal -->
     <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
 
-        <!-- Banner de Status de Carregamento -->
+        <!-- Banner de Status -->
         <div id="status-message" class="hidden mb-6 p-4 rounded-lg shadow-sm text-sm font-medium flex items-center justify-between">
             <span id="status-text"></span>
             <button onclick="document.getElementById('status-message').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">&times;</button>
@@ -65,7 +65,7 @@
 
             <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Registros na Planilha</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Registros Filtrados</p>
                     <h3 class="text-2xl font-bold text-amber-600 mt-1" id="kpi-cervejas">0</h3>
                 </div>
                 <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 text-xl">
@@ -75,7 +75,7 @@
 
             <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
                 <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Confrarias Ativas</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Confrarias Envolvidas</p>
                     <h3 class="text-2xl font-bold text-amber-600 mt-1" id="kpi-confrarias">0</h3>
                 </div>
                 <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 text-xl">
@@ -94,22 +94,22 @@
             </div>
         </div>
 
-        <!-- Painel de Filtros e Busca -->
+        <!-- Painel de Filtros e Pesquisa Geral / por Confraria -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
             <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-filter text-amber-600"></i> Filtros de Pesquisa Avançada
+                <i class="fa-solid fa-magnifying-glass text-amber-600"></i> Pesquisa Geral e Filtros por Confraria
             </h2>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <!-- Busca Texto -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Busca Texto Generalizada -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Busca Geral (Nome, Confraria, Estilo)</label>
-                    <input type="text" id="filter-search" placeholder="Ex: 3CJ, IPA, Chopeira..." class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Busca Generalizada (Qualquer termo)</label>
+                    <input type="text" id="filter-search" placeholder="Pesquisar em tudo..." class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500">
                 </div>
 
-                <!-- Filtro Confraria -->
+                <!-- Filtro Confraria Específica -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Confraria</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Confraria</label>
                     <select id="filter-confraria" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500">
                         <option value="">Todas as Confrarias</option>
                     </select>
@@ -120,6 +120,14 @@
                     <label class="block text-xs font-medium text-gray-600 mb-1">Estilo / Tipo de Cerveja</label>
                     <select id="filter-estilo" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500">
                         <option value="">Todos os Estilos</option>
+                    </select>
+                </div>
+
+                <!-- Seleção de Aba / Visão -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Aba da Planilha</label>
+                    <select id="filter-aba" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500" onchange="mudarAbaPlanilha()">
+                        <option value="Geral">Aba: Geral</option>
                     </select>
                 </div>
 
@@ -149,18 +157,20 @@
                     </div>
                     <input type="range" id="filter-ebc" min="0" max="80" step="5" value="80" class="w-full accent-amber-600">
                 </div>
+
+                <!-- Toggle Pendências -->
+                <div class="flex items-end">
+                    <label class="inline-flex items-center cursor-pointer text-xs font-medium text-gray-700 pb-2">
+                        <input type="checkbox" id="filter-pendencias" class="sr-only peer">
+                        <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                        <span class="ms-2">Apenas com pendências</span>
+                    </label>
+                </div>
             </div>
 
-            <!-- Botões e Toggle Pendências -->
-            <div class="mt-4 pt-3 border-t border-gray-100 flex flex-wrap justify-between items-center gap-3">
-                <label class="inline-flex items-center cursor-pointer text-xs font-medium text-gray-700">
-                    <input type="checkbox" id="filter-pendencias" class="sr-only peer">
-                    <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
-                    <span class="ms-2">Mostrar apenas itens com pendências (ABV/IBU/EBC faltando)</span>
-                </label>
-
+            <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end">
                 <button onclick="resetarFiltros()" class="text-xs text-amber-700 hover:text-amber-900 font-semibold flex items-center gap-1">
-                    <i class="fa-solid fa-eraser"></i> Limpar Filtros
+                    <i class="fa-solid fa-eraser"></i> Limpar Todos os Filtros
                 </button>
             </div>
         </div>
@@ -186,33 +196,24 @@
             </div>
         </div>
 
-        <!-- Tabela de Dados -->
+        <!-- Tabela Dinâmica Completa -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
             <div class="p-5 border-b border-gray-100 flex justify-between items-center">
                 <h3 class="text-md font-semibold text-gray-800 flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-amber-600"></i> Listagem Completa da Planilha
+                    <i class="fa-solid fa-table text-amber-600"></i> Detalhamento Completo dos Dados
                 </h3>
                 <span id="table-count" class="text-xs font-semibold bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">0 exibidos</span>
             </div>
 
             <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left border-collapse text-sm">
+                <table class="w-full text-left border-collapse text-sm" id="dynamic-table">
                     <thead>
-                        <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs font-semibold uppercase tracking-wider">
-                            <th class="py-3 px-4">Status</th>
-                            <th class="py-3 px-4">Confraria</th>
-                            <th class="py-3 px-4">Chopeira</th>
-                            <th class="py-3 px-4">Total (L)</th>
-                            <th class="py-3 px-4">Tipo / Estilo</th>
-                            <th class="py-3 px-4">Cervejas</th>
-                            <th class="py-3 px-4">ABV</th>
-                            <th class="py-3 px-4">IBU</th>
-                            <th class="py-3 px-4">EBC</th>
-                            <th class="py-3 px-4 text-center">Ações</th>
+                        <tr id="table-headers" class="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs font-semibold uppercase tracking-wider">
+                            <!-- Gerado dinamicamente -->
                         </tr>
                     </thead>
                     <tbody id="table-body" class="divide-y divide-gray-100">
-                        <!-- Dados dinâmicos via JS -->
+                        <!-- Dados gerados dinamicamente -->
                     </tbody>
                 </table>
             </div>
@@ -293,15 +294,16 @@
     <!-- Footer -->
     <footer class="bg-gray-800 text-gray-400 text-xs py-6 mt-auto">
         <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
-            <p>13º Festival de Confrarias do Rio de Janeiro (FDCRJ) - Sistema de Gestão & Degustação</p>
-            <p class="text-gray-500">Dados importados automaticamente do Google Sheets (Aba Geral) • Hospedado no GitHub Pages</p>
+            <p>13º Festival de Confrarias do Rio de Janeiro (FDCRJ) - Painel Dinâmico</p>
+            <p class="text-gray-500">Dados importados do Google Sheets • Hospedado no GitHub Pages</p>
         </div>
     </footer>
 
     <!-- Script Principal -->
     <script>
-        const SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/1S_ajLE6RhxOfa771lQaWYcAKhK_BnS1fRC9lLhABLx4/gviz/tq?tqx=out:csv&sheet=Geral';
-
+        const SHEET_ID = '1S_ajLE6RhxOfa771lQaWYcAKhK_BnS1fRC9lLhABLx4';
+        let abaAtual = 'Geral';
+        let colunasOriginais = [];
         let dadosBrutos = [];
         let dadosFiltrados = [];
         let chartLitrosInstance = null;
@@ -313,21 +315,24 @@
         });
 
         function carregarDados() {
-            mostrarStatus('Carregando todos os dados da planilha do Google Sheets...', 'info');
+            mostrarStatus(`Carregando dados da aba "${abaAtual}" do Google Sheets...`, 'info');
             const icon = document.getElementById('reload-icon');
             if (icon) icon.classList.add('fa-spin');
 
-            Papa.parse(SHEET_CSV_URL, {
+            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(abaAtual)}`;
+
+            Papa.parse(url, {
                 download: true,
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
                     if (icon) icon.classList.remove('fa-spin');
                     if (results.data && results.data.length > 0) {
+                        colunasOriginais = results.meta.fields || Object.keys(results.data[0]);
                         processarDados(results.data);
-                        mostrarStatus('Todos os dados foram carregados com sucesso!', 'success');
+                        mostrarStatus(`Dados da aba "${abaAtual}" carregados com sucesso!`, 'success');
                     } else {
-                        mostrarStatus('Planilha lida, mas nenhum registro foi encontrado.', 'warning');
+                        mostrarStatus('Aba lida, mas nenhum registro foi encontrado.', 'warning');
                     }
                 },
                 error: function(error) {
@@ -338,42 +343,41 @@
             });
         }
 
+        function mudarAbaPlanilha() {
+            abaAtual = document.getElementById('filter-aba').value;
+            carregarDados();
+        }
+
         function processarDados(data) {
             dadosBrutos = data.filter(row => {
-                // Captura qualquer campo de identificação de confraria ou linha preenchida
-                const conf = row['Confrarias'] || row['Confraria'] || Object.values(row)[2] || '';
-                const confStr = String(conf).toLowerCase();
-                return confStr && !confStr.includes('total') && !confStr.includes('média') && !confStr.includes('media por');
+                const valuesStr = Object.values(row).join(' ').toLowerCase();
+                return valuesStr && !valuesStr.includes('total') && !valuesStr.includes('média') && !valuesStr.includes('media por');
             }).map((row, index) => {
-                // Mapeia todas as colunas possíveis da planilha de forma flexível para garantir que nada fique de fora
-                const confraria = (row['Confrarias'] || row['Confraria'] || Object.values(row)[2] || 'N/A').trim();
-                const chopeira = (row['Chopeira'] || Object.values(row)[0] || '-').trim();
-                const totalL = parseFloat((row['Total ( L)'] || row['Total (L)'] || Object.values(row)[1] || '0').replace(',', '.')) || 0;
-                
-                // Tipos e Cervejas
-                const tipo = (row['Tipo Cerveja'] || row['Tipo'] || row['Estilo'] || 'Não Especificado').trim();
-                const cervejasQtd = (row['Cervejas'] || '-').trim();
+                // Identifica de forma flexível confraria, litros, estilos, ABV, IBU e EBC em qualquer aba
+                const keys = Object.keys(row);
+                const confrariaKey = keys.find(k => k.toLowerCase().includes('confraria')) || keys[2] || keys[0];
+                const litrosKey = keys.find(k => k.toLowerCase().includes('l') || k.toLowerCase().includes('litro') || k.toLowerCase().includes('total')) || keys[1];
+                const tipoKey = keys.find(k => k.toLowerCase().includes('tipo') || k.toLowerCase().includes('estilo')) || '';
+                const abvKey = keys.find(k => k.toLowerCase().includes('abv')) || '';
+                const ibuKey = keys.find(k => k.toLowerCase().includes('ibu')) || '';
+                const ebcKey = keys.find(k => k.toLowerCase().includes('ebc')) || '';
 
-                // Parâmetros ABV, IBU, EBC (buscando colunas específicas ou alternativas)
-                const abv = parseFloat((row['ABV'] || row['Teor Alcoólico'] || '0').replace(',', '.')) || 0;
-                const ibu = parseFloat((row['IBU'] || '0').replace(',', '.')) || 0;
-                const ebc = parseFloat((row['EBC'] || '0').replace(',', '.')) || 0;
-
-                const abvFaltando = parseInt(row['ABV faltando'] || '0') > 0 || abv === 0;
-                const ibuFaltando = parseInt(row['IBU faltando'] || '0') > 0 || ibu === 0;
-                const ebcFaltando = parseInt(row['EBC faltando'] || '0') > 0 || ebc === 0;
+                const confraria = String(row[confrariaKey] || 'N/A').trim();
+                const totalL = parseFloat(String(row[litrosKey] || '0').replace(',', '.')) || 0;
+                const tipo = tipoKey ? String(row[tipoKey] || 'Não Especificado').trim() : 'Geral';
+                const abv = abvKey ? parseFloat(String(row[abvKey] || '0').replace(',', '.')) || 0 : 0;
+                const ibu = ibuKey ? parseFloat(String(row[ibuKey] || '0').replace(',', '.')) || 0 : 0;
+                const ebc = ebcKey ? parseFloat(String(row[ebcKey] || '0').replace(',', '.')) || 0 : 0;
 
                 return {
                     id: index + 1,
                     confraria: confraria,
-                    chopeira: chopeira,
                     totalL: totalL,
-                    tipo: tipo !== '' ? tipo : 'Não Especificado',
-                    cervejas: cervejasQtd,
+                    tipo: tipo,
                     abv: abv,
                     ibu: ibu,
                     ebc: ebc,
-                    pendente: abvFaltando || ibuFaltando || ebcFaltando
+                    raw: row
                 };
             });
 
@@ -385,8 +389,8 @@
             const selectConf = document.getElementById('filter-confraria');
             const selectEstilo = document.getElementById('filter-estilo');
 
-            const confrarias = [...new Set(dadosBrutos.map(d => d.confraria))].sort();
-            const estilos = [...new Set(dadosBrutos.map(d => d.tipo))].sort();
+            const confrarias = [...new Set(dadosBrutos.map(d => d.confraria))].filter(Boolean).sort();
+            const estilos = [...new Set(dadosBrutos.map(d => d.tipo))].filter(t => t !== 'Geral' && t !== 'Não Especificado').sort();
 
             selectConf.innerHTML = '<option value="">Todas as Confrarias</option>';
             confrarias.forEach(c => {
@@ -429,19 +433,20 @@
             const apenasPendentes = document.getElementById('filter-pendencias').checked;
 
             dadosFiltrados = dadosBrutos.filter(d => {
-                const matchSearch = d.confraria.toLowerCase().includes(search) || d.tipo.toLowerCase().includes(search) || d.chopeira.toLowerCase().includes(search) || d.cervejas.toLowerCase().includes(search);
+                const rowString = Object.values(d.raw).join(' ').toLowerCase();
+                const matchSearch = !search || rowString.includes(search);
                 const matchConf = !confraria || d.confraria === confraria;
-                const matchEstilo = !estilo || d.tipo === estilo;
-                const matchAbv = d.abv <= maxAbv || d.abv === 0; // Inclui itens sem ABV preenchido na busca se o filtro estiver no teto
-                const matchIbu = d.ibu <= maxIbu || d.ibu === 0;
-                const matchEbc = d.ebc <= maxEbc || d.ebc === 0;
-                const matchPendente = !apenasPendentes || d.pendente;
+                const matchEstilo = !estilo || d.tipo.toLowerCase().includes(estilo.toLowerCase());
+                const matchAbv = d.abv === 0 || d.abv <= maxAbv;
+                const matchIbu = d.ibu === 0 || d.ibu <= maxIbu;
+                const matchEbc = d.ebc === 0 || d.ebc <= maxEbc;
+                const matchPendente = !apenasPendentes || (d.abv === 0 || d.ibu === 0 || d.ebc === 0);
 
                 return matchSearch && matchConf && matchEstilo && matchAbv && matchIbu && matchEbc && matchPendente;
             });
 
             atualizarKPIs();
-            renderizarTabela();
+            renderizarTabelaDinamica();
             atualizarGraficos();
         }
 
@@ -462,54 +467,65 @@
 
         function atualizarKPIs() {
             const totalLitros = dadosFiltrados.reduce((acc, curr) => acc + curr.totalL, 0);
-            const totalCervejas = dadosFiltrados.length;
+            const totalRegistros = dadosFiltrados.length;
             const confrariasUnicas = new Set(dadosFiltrados.map(d => d.confraria)).size;
-            const mediaL = totalCervejas > 0 ? (totalLitros / totalCervejas).toFixed(1) : 0;
+            const mediaL = totalRegistros > 0 ? (totalLitros / totalRegistros).toFixed(1) : 0;
 
             document.getElementById('kpi-litros').innerText = totalLitros.toLocaleString('pt-BR') + ' L';
-            document.getElementById('kpi-cervejas').innerText = totalCervejas;
+            document.getElementById('kpi-cervejas').innerText = totalRegistros;
             document.getElementById('kpi-confrarias').innerText = confrariasUnicas;
             document.getElementById('kpi-media').innerText = mediaL + ' L';
         }
 
-        function renderizarTabela() {
+        function renderizarTabelaDinamica() {
+            const theaders = document.getElementById('table-headers');
             const tbody = document.getElementById('table-body');
             const tableCount = document.getElementById('table-count');
+
+            theaders.innerHTML = '';
             tbody.innerHTML = '';
 
             tableCount.innerText = `${dadosFiltrados.length} exibidos`;
 
-            if (dadosFiltrados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="py-6 text-center text-gray-500">Nenhum registro encontrado com os filtros selecionados.</td></tr>`;
+            if (colunasOriginais.length === 0 || dadosFiltrados.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="py-6 text-center text-gray-500">Nenhum dado encontrado para os filtros aplicados.</td></tr>`;
                 return;
             }
 
+            // Cria cabeçalhos com colunas originais + Avaliação
+            let headerHTML = `<th class="py-3 px-4">Status</th>`;
+            colunasOriginais.forEach(col => {
+                headerHTML += `<th class="py-3 px-4">${col}</th>`;
+            });
+            headerHTML += `<th class="py-3 px-4 text-center">Ações</th>`;
+            theaders.innerHTML = headerHTML;
+
+            // Preenche linhas
             dadosFiltrados.forEach(item => {
-                const avaliacao = JSON.parse(localStorage.getItem(`degustacao_${item.id}`) || 'null');
+                const avaliacao = JSON.parse(localStorage.getItem(`degustacao_${abaAtual}_${item.id}`) || 'null');
                 const badgeAvaliacao = avaliacao ? `<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded font-semibold"><i class="fa-solid fa-check"></i> Avaliada</span>` : '';
 
-                const statusDot = item.pendente 
-                    ? `<span class="inline-block w-3 h-3 rounded-full bg-amber-500" title="Pendência de cadastro (ABV, IBU ou EBC faltando)"></span>` 
-                    : `<span class="inline-block w-3 h-3 rounded-full bg-emerald-500" title="Dados Completos"></span>`;
+                const pendente = item.abv === 0 || item.ibu === 0 || item.ebc === 0;
+                const statusDot = pendente 
+                    ? `<span class="inline-block w-3 h-3 rounded-full bg-amber-500" title="Dados incompletos"></span>` 
+                    : `<span class="inline-block w-3 h-3 rounded-full bg-emerald-500" title="Completo"></span>`;
 
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-amber-50/50 transition';
-                tr.innerHTML = `
-                    <td class="py-3 px-4 text-center">${statusDot}</td>
-                    <td class="py-3 px-4 font-semibold text-gray-800">${item.confraria}</td>
-                    <td class="py-3 px-4">Chopeira ${item.chopeira}</td>
-                    <td class="py-3 px-4 font-bold text-amber-700">${item.totalL} L</td>
-                    <td class="py-3 px-4"><span class="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-medium">${item.tipo}</span> ${badgeAvaliacao}</td>
-                    <td class="py-3 px-4 text-gray-600">${item.cervejas}</td>
-                    <td class="py-3 px-4">${item.abv > 0 ? item.abv + '%' : '<span class="text-gray-400 italic">N/I</span>'}</td>
-                    <td class="py-3 px-4">${item.ibu > 0 ? item.ibu : '<span class="text-gray-400 italic">N/I</span>'}</td>
-                    <td class="py-3 px-4">${item.ebc > 0 ? item.ebc : '<span class="text-gray-400 italic">N/I</span>'}</td>
+                let rowHTML = `<td class="py-3 px-4 text-center">${statusDot}</td>`;
+                colunasOriginais.forEach(col => {
+                    let val = item.raw[col] !== undefined ? item.raw[col] : '';
+                    rowHTML += `<td class="py-3 px-4 text-gray-700">${val}</td>`;
+                });
+                rowHTML += `
                     <td class="py-3 px-4 text-center">
                         <button onclick="abrirModal(${item.id})" class="bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1 mx-auto">
-                            <i class="fa-solid fa-star text-amber-500"></i> Avaliar
+                            <i class="fa-solid fa-star text-amber-500"></i> Avaliar ${badgeAvaliacao}
                         </button>
                     </td>
                 `;
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-amber-50/50 transition';
+                tr.innerHTML = rowHTML;
                 tbody.appendChild(tr);
             });
         }
@@ -517,7 +533,9 @@
         function atualizarGraficos() {
             const litrosPorConf = {};
             dadosFiltrados.forEach(d => {
-                litrosPorConf[d.confraria] = (litrosPorConf[d.confraria] || 0) + d.totalL;
+                if (d.confraria && d.confraria !== 'N/A') {
+                    litrosPorConf[d.confraria] = (litrosPorConf[d.confraria] || 0) + d.totalL;
+                }
             });
 
             const labelsConf = Object.keys(litrosPorConf);
@@ -586,9 +604,9 @@
 
             document.getElementById('degustacao-id').value = id;
             document.getElementById('modal-titulo').innerText = `Degustar: ${item.confraria}`;
-            document.getElementById('modal-subtitulo').innerText = `Estilo: ${item.tipo} | ABV: ${item.abv}% | IBU: ${item.ibu}`;
+            document.getElementById('modal-subtitulo').innerText = `Registro ID: ${id} | Aba: ${abaAtual}`;
 
-            const salvo = JSON.parse(localStorage.getItem(`degustacao_${id}`) || 'null');
+            const salvo = JSON.parse(localStorage.getItem(`degustacao_${abaAtual}_${id}`) || 'null');
             if (salvo) {
                 document.getElementById('nota-aroma').value = salvo.aroma;
                 document.getElementById('nota-aparencia').value = salvo.aparencia;
@@ -621,9 +639,9 @@
                 data: new Date().toISOString()
             };
 
-            localStorage.setItem(`degustacao_${id}`, JSON.stringify(avaliacao));
+            localStorage.setItem(`degustacao_${abaAtual}_${id}`, JSON.stringify(avaliacao));
             fecharModal();
-            renderizarTabela();
+            renderizarTabelaDinamica();
             mostrarStatus('Avaliação salva com sucesso no navegador!', 'success');
         }
 
@@ -633,24 +651,16 @@
                 return;
             }
 
-            const headers = ['Confraria', 'Chopeira', 'Total_Litros', 'Tipo_Estilo', 'Cervejas', 'ABV', 'IBU', 'EBC', 'Pendente'];
-            const rows = dadosFiltrados.map(d => [
-                `"${d.confraria}"`,
-                `"${d.chopeira}"`,
-                d.totalL,
-                `"${d.tipo}"`,
-                `"${d.cervejas}"`,
-                d.abv,
-                d.ibu,
-                d.ebc,
-                d.pendente ? 'Sim' : 'Não'
-            ]);
+            const headers = colunasOriginais;
+            const rows = dadosFiltrados.map(d => {
+                return headers.map(h => `"${(d.raw[h] !== undefined ? d.raw[h] : '').toString().replace(/"/g, '""')}"`);
+            });
 
             const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement('a');
             link.setAttribute('href', encodedUri);
-            link.setAttribute('download', 'cervejas_13FDCRJ_completo.csv');
+            link.setAttribute('download', `cervejas_${abaAtual}_filtrado.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
