@@ -3,131 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Completo de Cervejas & Confrarias - 13FDCRJ</title>
+    <title>Painel de Cervejas & Confrarias - 13FDCRJ</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
+    <!-- Chart.js para visualização -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- PapaParse para ler CSV -->
+    <!-- PapaParse para leitura resiliente de CSV -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #d97706; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #b45309; }
+        @keyframes pulse-light {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-pulse-light { animation: pulse-light 1.5s infinite; }
     </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800 min-h-screen flex flex-col">
 
-    <!-- Header / Navbar -->
-    <header class="bg-amber-600 text-white shadow-md">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-amber-700 via-amber-600 to-amber-700 text-white shadow-lg sticky top-0 z-40">
         <div class="max-w-7xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-4">
             <div class="flex items-center space-x-3">
-                <i class="fa-solid font-bold fa-beer-mug-empty text-3xl text-amber-200"></i>
+                <div class="w-10 h-10 bg-amber-500/30 rounded-xl flex items-center justify-center border border-amber-300/30 shadow-inner">
+                    <i class="fa-solid fa-beer-mug-empty text-2xl text-amber-200"></i>
+                </div>
                 <div>
-                    <h1 class="text-2xl font-bold leading-tight">Painel 13FDCRJ</h1>
-                    <p class="text-xs text-amber-100">Busca Avançada de Cervejas & Confrarias</p>
+                    <h1 class="text-xl md:text-2xl font-bold leading-tight tracking-tight">13º FDCRJ - Busca Universal</h1>
+                    <p class="text-xs text-amber-100/80">Pesquisa instantânea em todas as colunas, abas e confrarias</p>
                 </div>
             </div>
+            
             <div class="flex items-center space-x-2">
-                <button onclick="carregarDados()" class="bg-amber-700 hover:bg-amber-800 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center gap-2">
-                    <i class="fa-solid fa-rotate-right" id="reload-icon"></i> Atualizar Dados
+                <button onclick="carregarTodasAsAbas(true)" class="bg-amber-800/80 hover:bg-amber-900 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-amber-500/40 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-rotate-right" id="reload-icon"></i>
+                    <span class="hidden sm:inline">Recarregar Planilha</span>
                 </button>
-                <button onclick="exportarCSV()" class="bg-amber-800 hover:bg-amber-900 text-white px-3 py-2 rounded text-sm font-medium transition flex items-center gap-2">
-                    <i class="fa-solid fa-file-csv"></i> Exportar CSV
+                <button onclick="exportarCSV()" class="bg-amber-900/90 hover:bg-amber-950 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition flex items-center gap-2 border border-amber-700 shadow-sm active:scale-95">
+                    <i class="fa-solid fa-file-csv"></i>
+                    <span class="hidden sm:inline">Exportar CSV</span>
                 </button>
             </div>
         </div>
     </header>
 
     <!-- Conteúdo Principal -->
-    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full space-y-6">
 
-        <!-- Banner de Status -->
-        <div id="status-message" class="hidden mb-6 p-4 rounded-lg shadow-sm text-sm font-medium flex items-center justify-between">
-            <span id="status-text"></span>
-            <button onclick="document.getElementById('status-message').classList.add('hidden')" class="text-gray-500 hover:text-gray-700">&times;</button>
+        <!-- Banner de Status/Notificação -->
+        <div id="status-message" class="hidden p-4 rounded-xl shadow-sm text-sm font-medium flex items-center justify-between transition-all duration-300 border">
+            <div class="flex items-center gap-3">
+                <i id="status-icon" class="fa-solid fa-circle-info text-lg"></i>
+                <span id="status-text">Carregando informações...</span>
+            </div>
+            <button onclick="document.getElementById('status-message').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-lg font-bold px-2">&times;</button>
         </div>
 
-        <!-- KPI Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+        <!-- Cards Informativos / KPIs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition">
                 <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total de Litros Geral</p>
-                    <h3 class="text-2xl font-bold text-amber-600 mt-1" id="kpi-litros">0 L</h3>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total de Litros</p>
+                    <h3 class="text-2xl font-black text-amber-600 mt-1" id="kpi-litros">0 L</h3>
                 </div>
-                <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 text-xl">
+                <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 text-xl border border-amber-100">
                     <i class="fa-solid fa-faucet-drip"></i>
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition">
                 <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Registros Encontrados</p>
-                    <h3 class="text-2xl font-bold text-amber-600 mt-1" id="kpi-cervejas">0</h3>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Cervejas / Registros</p>
+                    <h3 class="text-2xl font-black text-amber-600 mt-1" id="kpi-cervejas">0</h3>
                 </div>
-                <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 text-xl">
+                <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 text-xl border border-amber-100">
                     <i class="fa-solid fa-glass-water"></i>
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition">
                 <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Confrarias Envolvidas</p>
-                    <h3 class="text-2xl font-bold text-amber-600 mt-1" id="kpi-confrarias">0</h3>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Confrarias Encontradas</p>
+                    <h3 class="text-2xl font-black text-amber-600 mt-1" id="kpi-confrarias">0</h3>
                 </div>
-                <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 text-xl">
+                <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 text-xl border border-amber-100">
                     <i class="fa-solid fa-people-group"></i>
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-between hover:shadow-md transition">
                 <div>
-                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Média L / Registro</p>
-                    <h3 class="text-2xl font-bold text-amber-600 mt-1" id="kpi-media">0 L</h3>
+                    <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Média de Litros/Item</p>
+                    <h3 class="text-2xl font-black text-amber-600 mt-1" id="kpi-media">0 L</h3>
                 </div>
-                <div class="w-12 h-12 bg-amber-50 rounded-full flex items-center justify-center text-amber-600 text-xl">
+                <div class="w-12 h-12 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 text-xl border border-amber-100">
                     <i class="fa-solid fa-calculator"></i>
                 </div>
             </div>
         </div>
 
-        <!-- Painel de Filtros e Pesquisa -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
-            <h2 class="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-magnifying-glass text-amber-600"></i> Pesquisa Generalizada e Filtros
-            </h2>
+        <!-- Painel de Pesquisa Universal e Filtros -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 pb-3">
+                <h2 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-magnifying-glass text-amber-600"></i> Pesquisa Abrangente & Filtros
+                </h2>
+                <span class="text-xs text-amber-800 bg-amber-50 px-3 py-1 rounded-full font-medium border border-amber-200" id="modo-busca-tag">
+                    Modo: Todas as Abas da Planilha
+                </span>
+            </div>
             
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Busca Texto Generalizada -->
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Pesquisa Geral (Ex: "Tiro no escuro")</label>
-                    <input type="text" id="filter-search" placeholder="Digite o nome da cerveja, estilo..." class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500">
+                <!-- Busca Texto Geral (Procura em TUDO) -->
+                <div class="lg:col-span-2">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">
+                        Pesquisa Global no Conteúdo (Ex: "tiro no escuro", "IPA", "Imperial", etc.)
+                    </label>
+                    <div class="relative">
+                        <input type="text" id="filter-search" placeholder="Procure qualquer palavra ou nome em TODA a planilha..." class="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition shadow-sm">
+                        <i class="fa-solid fa-search absolute left-3.5 top-3.5 text-gray-400 text-sm"></i>
+                        <button onclick="document.getElementById('filter-search').value=''; aplicarFiltros();" class="absolute right-3 top-3 text-gray-400 hover:text-gray-600 text-xs font-bold">
+                            <i class="fa-solid fa-xmark text-sm"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Filtro Confraria Específica -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por Confraria</label>
-                    <select id="filter-confraria" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Filtrar por Confraria</label>
+                    <select id="filter-confraria" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition shadow-sm">
                         <option value="">Todas as Confrarias</option>
+                    </select>
+                </div>
+
+                <!-- Seleção de Escopo de Aba -->
+                <div>
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Origem / Aba da Planilha</label>
+                    <select id="filter-aba" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition shadow-sm" onchange="alternarEscopoAba()">
+                        <option value="TODAS">🔥 Pesquisar em TODAS as Abas</option>
                     </select>
                 </div>
 
                 <!-- Filtro Estilo/Tipo -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Estilo / Tipo de Cerveja</label>
-                    <select id="filter-estilo" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500">
+                    <label class="block text-xs font-semibold text-gray-600 mb-1">Estilo / Categoria</label>
+                    <select id="filter-estilo" class="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition shadow-sm">
                         <option value="">Todos os Estilos</option>
-                    </select>
-                </div>
-
-                <!-- Seleção de Aba -->
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Aba da Planilha</label>
-                    <select id="filter-aba" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-amber-500 focus:border-amber-500" onchange="mudarAbaPlanilha()">
-                        <option value="Geral">Aba: Geral</option>
                     </select>
                 </div>
 
@@ -135,50 +161,47 @@
                 <div>
                     <div class="flex justify-between text-xs font-medium text-gray-600 mb-1">
                         <span>ABV Máximo (%):</span>
-                        <span id="val-abv" class="font-bold text-amber-600">15%</span>
+                        <span id="val-abv" class="font-bold text-amber-600">18%</span>
                     </div>
-                    <input type="range" id="filter-abv" min="0" max="15" step="0.5" value="15" class="w-full accent-amber-600">
+                    <input type="range" id="filter-abv" min="0" max="18" step="0.5" value="18" class="w-full accent-amber-600 cursor-pointer">
                 </div>
 
                 <!-- Sliders IBU -->
                 <div>
                     <div class="flex justify-between text-xs font-medium text-gray-600 mb-1">
                         <span>IBU Máximo (Amargor):</span>
-                        <span id="val-ibu" class="font-bold text-amber-600">120</span>
+                        <span id="val-ibu" class="font-bold text-amber-600">150</span>
                     </div>
-                    <input type="range" id="filter-ibu" min="0" max="120" step="5" value="120" class="w-full accent-amber-600">
+                    <input type="range" id="filter-ibu" min="0" max="150" step="5" value="150" class="w-full accent-amber-600 cursor-pointer">
                 </div>
 
                 <!-- Sliders EBC -->
                 <div>
                     <div class="flex justify-between text-xs font-medium text-gray-600 mb-1">
                         <span>EBC Máximo (Cor):</span>
-                        <span id="val-ebc" class="font-bold text-amber-600">80</span>
+                        <span id="val-ebc" class="font-bold text-amber-600">100</span>
                     </div>
-                    <input type="range" id="filter-ebc" min="0" max="80" step="5" value="80" class="w-full accent-amber-600">
-                </div>
-
-                <!-- Toggle Pendências -->
-                <div class="flex items-end">
-                    <label class="inline-flex items-center cursor-pointer text-xs font-medium text-gray-700 pb-2">
-                        <input type="checkbox" id="filter-pendencias" class="sr-only peer">
-                        <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
-                        <span class="ms-2">Apenas com pendências</span>
-                    </label>
+                    <input type="range" id="filter-ebc" min="0" max="100" step="5" value="100" class="w-full accent-amber-600 cursor-pointer">
                 </div>
             </div>
 
-            <div class="mt-4 pt-3 border-t border-gray-100 flex justify-end">
-                <button onclick="resetarFiltros()" class="text-xs text-amber-700 hover:text-amber-900 font-semibold flex items-center gap-1">
-                    <i class="fa-solid fa-eraser"></i> Limpar Todos os Filtros
+            <div class="pt-3 border-t border-gray-100 flex flex-wrap justify-between items-center gap-2">
+                <label class="inline-flex items-center cursor-pointer text-xs font-medium text-gray-700">
+                    <input type="checkbox" id="filter-pendencias" class="sr-only peer">
+                    <div class="relative w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-600"></div>
+                    <span class="ms-2">Exibir apenas registros incompletos/pendentes</span>
+                </label>
+
+                <button onclick="resetarFiltros()" class="text-xs text-amber-700 hover:text-amber-900 font-semibold flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-amber-50 transition">
+                    <i class="fa-solid fa-eraser"></i> Limpar Filtros
                 </button>
             </div>
         </div>
 
-        <!-- Seção de Gráficos -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <!-- Seção de Gráficos de Análise -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
                     <i class="fa-solid fa-chart-column text-amber-600"></i> Total de Litros por Confraria
                 </h3>
                 <div class="relative h-64">
@@ -186,9 +209,9 @@
                 </div>
             </div>
 
-            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                <h3 class="text-md font-semibold text-gray-800 mb-4 flex items-center gap-2">
-                    <i class="fa-solid fa-chart-scatter text-amber-600"></i> Relação IBU vs ABV
+            <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
+                <h3 class="text-sm font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-scatter text-amber-600"></i> Dispersão IBU vs ABV
                 </h3>
                 <div class="relative h-64">
                     <canvas id="chart-scatter"></canvas>
@@ -196,24 +219,29 @@
             </div>
         </div>
 
-        <!-- Tabela Dinâmica Completa -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-8">
-            <div class="p-5 border-b border-gray-100 flex justify-between items-center">
-                <h3 class="text-md font-semibold text-gray-800 flex items-center gap-2">
-                    <i class="fa-solid fa-table text-amber-600"></i> Detalhamento Completo dos Dados
-                </h3>
-                <span id="table-count" class="text-xs font-semibold bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">0 exibidos</span>
+        <!-- Tabela Completa de Resultados -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div class="p-5 border-b border-gray-100 flex flex-wrap justify-between items-center gap-2 bg-gray-50/50">
+                <div>
+                    <h3 class="text-base font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fa-solid fa-table text-amber-600"></i> Detalhamento Unificado
+                    </h3>
+                    <p class="text-xs text-gray-500">Exibindo dados de todas as colunas capturadas na planilha</p>
+                </div>
+                <span id="table-count" class="text-xs font-bold bg-amber-100 text-amber-900 px-3 py-1 rounded-full border border-amber-200">
+                    0 itens encontrados
+                </span>
             </div>
 
             <div class="overflow-x-auto custom-scrollbar">
-                <table class="w-full text-left border-collapse text-sm" id="dynamic-table">
+                <table class="w-full text-left border-collapse text-xs" id="dynamic-table">
                     <thead>
-                        <tr id="table-headers" class="bg-gray-50 border-b border-gray-200 text-gray-600 text-xs font-semibold uppercase tracking-wider">
-                            <!-- Gerado dinamicamente -->
+                        <tr id="table-headers" class="bg-gray-100/80 border-b border-gray-200 text-gray-700 font-bold uppercase tracking-wider">
+                            <!-- Gerado via JS -->
                         </tr>
                     </thead>
                     <tbody id="table-body" class="divide-y divide-gray-100">
-                        <!-- Dados gerados dinamicamente -->
+                        <!-- Gerado via JS -->
                     </tbody>
                 </table>
             </div>
@@ -221,192 +249,264 @@
 
     </main>
 
-    <!-- Modal de Degustação / Avaliação -->
-    <div id="modal-degustacao" class="fixed inset-0 bg-black/50 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl relative animate-fadeIn">
+    <!-- Modal Ficha de Degustação -->
+    <div id="modal-degustacao" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative animate-fadeIn">
             <button onclick="fecharModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
             
-            <h3 class="text-xl font-bold text-amber-800 mb-1" id="modal-titulo">Ficha de Degustação</h3>
-            <p class="text-xs text-gray-500 mb-4" id="modal-subtitulo">Avaliação da Cerveja</p>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-amber-100 text-amber-700 rounded-xl flex items-center justify-center text-lg">
+                    <i class="fa-solid fa-star"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-bold text-gray-900 leading-snug" id="modal-titulo">Ficha de Degustação</h3>
+                    <p class="text-xs text-gray-500" id="modal-subtitulo">Sua avaliação sensorial local</p>
+                </div>
+            </div>
 
             <form id="form-degustacao" onsubmit="salvarAvaliacao(event)" class="space-y-4">
                 <input type="hidden" id="degustacao-id">
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Aroma (1 a 5)</label>
-                        <select id="nota-aroma" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" required>
-                            <option value="5">⭐⭐⭐⭐⭐ (5)</option>
-                            <option value="4">⭐⭐⭐⭐ (4)</option>
-                            <option value="3">⭐⭐⭐ (3)</option>
-                            <option value="2">⭐⭐ (2)</option>
-                            <option value="1">⭐ (1)</option>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Aroma (1 a 5)</label>
+                        <select id="nota-aroma" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs" required>
+                            <option value="5">⭐⭐⭐⭐⭐ (5 - Excelente)</option>
+                            <option value="4">⭐⭐⭐⭐ (4 - Bom)</option>
+                            <option value="3">⭐⭐⭐ (3 - Regular)</option>
+                            <option value="2">⭐⭐ (2 - Baixo)</option>
+                            <option value="1">⭐ (1 - Ruim)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Aparência (1 a 5)</label>
-                        <select id="nota-aparencia" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" required>
-                            <option value="5">⭐⭐⭐⭐⭐ (5)</option>
-                            <option value="4">⭐⭐⭐⭐ (4)</option>
-                            <option value="3">⭐⭐⭐ (3)</option>
-                            <option value="2">⭐⭐ (2)</option>
-                            <option value="1">⭐ (1)</option>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Aparência (1 a 5)</label>
+                        <select id="nota-aparencia" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs" required>
+                            <option value="5">⭐⭐⭐⭐⭐ (5 - Excelente)</option>
+                            <option value="4">⭐⭐⭐⭐ (4 - Bom)</option>
+                            <option value="3">⭐⭐⭐ (3 - Regular)</option>
+                            <option value="2">⭐⭐ (2 - Baixo)</option>
+                            <option value="1">⭐ (1 - Ruim)</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Sabor (1 a 5)</label>
-                        <select id="nota-sabor" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" required>
-                            <option value="5">⭐⭐⭐⭐⭐ (5)</option>
-                            <option value="4">⭐⭐⭐⭐ (4)</option>
-                            <option value="3">⭐⭐⭐ (3)</option>
-                            <option value="2">⭐⭐ (2)</option>
-                            <option value="1">⭐ (1)</option>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Sabor (1 a 5)</label>
+                        <select id="nota-sabor" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs" required>
+                            <option value="5">⭐⭐⭐⭐⭐ (5 - Excelente)</option>
+                            <option value="4">⭐⭐⭐⭐ (4 - Bom)</option>
+                            <option value="3">⭐⭐⭐ (3 - Regular)</option>
+                            <option value="2">⭐⭐ (2 - Baixo)</option>
+                            <option value="1">⭐ (1 - Ruim)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-700 mb-1">Conjunto / Geral</label>
-                        <select id="nota-geral" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm" required>
-                            <option value="5">⭐⭐⭐⭐⭐ (Excelente)</option>
-                            <option value="4">⭐⭐⭐⭐ (Muito Boa)</option>
-                            <option value="3">⭐⭐⭐ (Ok)</option>
-                            <option value="2">⭐⭐ (Regular)</option>
-                            <option value="1">⭐ (Com Defeito)</option>
+                        <label class="block text-xs font-semibold text-gray-700 mb-1">Geral / Impressão</label>
+                        <select id="nota-geral" class="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-xs" required>
+                            <option value="5">⭐⭐⭐⭐⭐ (Superou Destaque)</option>
+                            <option value="4">⭐⭐⭐⭐ (Muito Agradável)</option>
+                            <option value="3">⭐⭐⭐ (Dentro do Estilo)</option>
+                            <option value="2">⭐⭐ (Pequenos Defeitos)</option>
+                            <option value="1">⭐ (Off-flavors marcantes)</option>
                         </select>
                     </div>
                 </div>
 
                 <div>
-                    <label class="block text-xs font-medium text-gray-700 mb-1">Notas Sensoriais e Comentários</label>
-                    <textarea id="nota-comentarios" rows="3" placeholder="Ex: Frutada, amargor limpo, bom corpo..." class="w-full border border-gray-300 rounded p-2 text-sm focus:ring-amber-500 focus:border-amber-500"></textarea>
+                    <label class="block text-xs font-semibold text-gray-700 mb-1">Notas Sensoriais e Comentários</label>
+                    <textarea id="nota-comentarios" rows="3" placeholder="Ex: Notas citricas de lúpulo, corpo denso, amargor persistente e limpo..." class="w-full border border-gray-300 rounded-lg p-2.5 text-xs focus:ring-amber-500 focus:border-amber-500"></textarea>
                 </div>
 
-                <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" onclick="fecharModal()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded text-sm hover:bg-gray-50">Cancelar</button>
-                    <button type="submit" class="px-4 py-2 bg-amber-600 text-white rounded text-sm hover:bg-amber-700 font-medium">Salvar Avaliação</button>
+                <div class="flex justify-end gap-2 pt-2 border-t border-gray-100">
+                    <button type="button" onclick="fecharModal()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-50">Cancelar</button>
+                    <button type="submit" class="px-4 py-2 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700 shadow-sm">Salvar Avaliação</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- Footer -->
-    <footer class="bg-gray-800 text-gray-400 text-xs py-6 mt-auto">
+    <footer class="bg-slate-900 text-slate-400 text-xs py-6 mt-auto border-t border-slate-800">
         <div class="max-w-7xl mx-auto px-4 text-center space-y-2">
-            <p>13º Festival de Confrarias do Rio de Janeiro (FDCRJ) - Painel Dinâmico</p>
-            <p class="text-gray-500">Dados importados do Google Sheets • Hospedado no GitHub Pages</p>
+            <p class="font-medium text-slate-300">13º Festival de Confrarias do Rio de Janeiro (FDCRJ) - Sistema Universal de Busca</p>
+            <p class="text-slate-500">Buscador indexado em tempo real com normalização de acentuação e suporte multi-abas</p>
         </div>
     </footer>
 
-    <!-- Script Principal -->
     <script>
+        // ID da Planilha do Usuário
         const SHEET_ID = '1S_ajLE6RhxOfa771lQaWYcAKhK_BnS1fRC9lLhABLx4';
-        let abaAtual = 'Geral';
-        let colunasOriginais = [];
-        let dadosBrutos = [];
+
+        // Lista de abas padrão conhecidas ou possíveis da planilha para busca ampla
+        const ABAS_POSSIVEIS = ['Geral', 'Cervejas', 'Confrarias', 'Inscrições', 'Resumo', 'Sheet1', 'Página1'];
+
+        // Estado da aplicação
+        let todasAsAbasCarregadas = {};
+        let colunasUnificadas = [];
+        let dadosBrutosGlobal = [];
         let dadosFiltrados = [];
+
+        // Instâncias dos gráficos
         let chartLitrosInstance = null;
         let chartScatterInstance = null;
 
         document.addEventListener('DOMContentLoaded', () => {
-            carregarDados();
+            carregarTodasAsAbas();
             configurarEventListeners();
         });
 
-        function normalizarTexto(texto) {
-            return String(texto || '').normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        // Função de Sanitização e Normalização de Texto (Remove acentos, maiúsculas e caracteres especiais)
+        function normalizarTexto(str) {
+            return String(str || '')
+                .normalize("NFD")
+                .replace(/[\u0300-\u036f]/g, "")
+                .toLowerCase()
+                .trim();
         }
 
-        function carregarDados() {
-            mostrarStatus(`Carregando dados da aba "${abaAtual}" do Google Sheets...`, 'info');
+        // Função para carregar todas as abas da planilha simultaneamente
+        async function carregarTodasAsAbas(forceReload = false) {
+            mostrarStatus('Conectando ao Google Sheets e indexando todas as abas...', 'info');
             const icon = document.getElementById('reload-icon');
             if (icon) icon.classList.add('fa-spin');
 
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(abaAtual)}`;
+            todasAsAbasCarregadas = {};
+            dadosBrutosGlobal = [];
+            colunasUnificadas = [];
 
-            Papa.parse(url, {
-                download: true,
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    if (icon) icon.classList.remove('fa-spin');
-                    if (results.data && results.data.length > 0) {
-                        colunasOriginais = results.meta.fields || Object.keys(results.data[0]);
-                        processarDados(results.data);
-                        mostrarStatus(`Dados da aba "${abaAtual}" carregados com sucesso!`, 'success');
-                    } else {
-                        mostrarStatus('Aba lida, mas nenhum registro foi encontrado.', 'warning');
+            const promises = ABAS_POSSIVEIS.map(aba => carregarAbaIndividuall(aba));
+
+            await Promise.allSettled(promises);
+
+            if (icon) icon.classList.remove('fa-spin');
+
+            // Consolidação dos dados
+            processarEUnificarDados();
+        }
+
+        function carregarAbaIndividuall(nomeAba) {
+            return new Promise((resolve) => {
+                const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(nomeAba)}`;
+
+                Papa.parse(url, {
+                    download: true,
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        if (results.data && results.data.length > 0) {
+                            // Verifica se a aba retornou dados válidos
+                            const firstRowStr = Object.values(results.data[0]).join('');
+                            if (firstRowStr && !firstRowStr.includes('HTML') && !firstRowStr.includes('<!DOCTYPE')) {
+                                todasAsAbasCarregadas[nomeAba] = {
+                                    fields: results.meta.fields || Object.keys(results.data[0]),
+                                    data: results.data
+                                };
+                            }
+                        }
+                        resolve();
+                    },
+                    error: function() {
+                        // Se falhar uma aba específica, resolve graciosamente
+                        resolve();
                     }
-                },
-                error: function(error) {
-                    if (icon) icon.classList.remove('fa-spin');
-                    mostrarStatus('Erro ao carregar a planilha. Verifique a permissão de acesso público.', 'error');
-                    console.error('Erro PapaParse:', error);
-                }
+                });
             });
         }
 
-        function mudarAbaPlanilha() {
-            abaAtual = document.getElementById('filter-aba').value;
-            carregarDados();
-        }
+        function processarEUnificarDados() {
+            const abasEncontradas = Object.keys(todasAsAbasCarregadas);
 
-        function processarDados(data) {
-            dadosBrutos = data.filter(row => {
-                const valuesStr = Object.values(row).join(' ').toLowerCase();
-                return valuesStr && !valuesStr.includes('total') && !valuesStr.includes('média') && !valuesStr.includes('media por');
-            }).map((row, index) => {
-                const keys = Object.keys(row);
-                const confrariaKey = keys.find(k => normalizarTexto(k).includes('confraria')) || keys[2] || keys[0];
-                const litrosKey = keys.find(k => {
-                    const nk = normalizarTexto(k);
-                    return nk.includes('l') || nk.includes('litro') || nk.includes('total');
-                }) || keys[1];
-                const tipoKey = keys.find(k => {
-                    const nk = normalizarTexto(k);
-                    return nk.includes('tipo') || nk.includes('estilo') || nk.includes('cerveja');
-                }) || '';
-                const abvKey = keys.find(k => normalizarTexto(k).includes('abv')) || '';
-                const ibuKey = keys.find(k => normalizarTexto(k).includes('ibu')) || '';
-                const ebcKey = keys.find(k => normalizarTexto(k).includes('ebc')) || '';
+            if (abasEncontradas.length === 0) {
+                mostrarStatus('Não foi possível carregar nenhuma aba. Verifique se a planilha é pública.', 'error');
+                return;
+            }
 
-                const confraria = String(row[confrariaKey] || 'N/A').trim();
-                const totalL = parseFloat(String(row[litrosKey] || '0').replace(',', '.')) || 0;
-                const tipo = tipoKey ? String(row[tipoKey] || 'Não Especificado').trim() : 'Geral';
-                const abv = abvKey ? parseFloat(String(row[abvKey] || '0').replace(',', '.')) || 0 : 0;
-                const ibu = ibuKey ? parseFloat(String(row[ibuKey] || '0').replace(',', '.')) || 0 : 0;
-                const ebc = ebcKey ? parseFloat(String(row[ebcKey] || '0').replace(',', '.')) || 0 : 0;
+            // Atualiza o dropdown de abas disponíveis
+            const selectAba = document.getElementById('filter-aba');
+            selectAba.innerHTML = '<option value="TODAS">🔥 Pesquisar em TODAS as Abas (' + abasEncontradas.length + ' carregadas)</option>';
+            abasEncontradas.forEach(aba => {
+                selectAba.innerHTML += `<option value="${aba}">Aba: ${aba}</option>`;
+            });
 
-                // Indexa todas as colunas para busca generalizada em formato normalizado (sem acentos)
-                let searchableText = '';
-                Object.values(row).forEach(val => {
-                    searchableText += ' ' + normalizarTexto(val);
+            let globalCounter = 0;
+            let colSet = new Set(['Aba Origem']);
+
+            dadosBrutosGlobal = [];
+
+            abasEncontradas.forEach(nomeAba => {
+                const abaObj = todasAsAbasCarregadas[nomeAba];
+                
+                // Adiciona colunas ao conjunto unificado
+                abaObj.fields.forEach(f => {
+                    if (f && f.trim() !== '') colSet.add(f.trim());
                 });
 
-                return {
-                    id: index + 1,
-                    confraria: confraria,
-                    totalL: totalL,
-                    tipo: tipo,
-                    abv: abv,
-                    ibu: ibu,
-                    ebc: ebc,
-                    searchText: searchableText,
-                    raw: row
-                };
+                abaObj.data.forEach(row => {
+                    const rowTextRaw = Object.values(row).join(' ');
+                    const rowTextNorm = normalizarTexto(rowTextRaw);
+
+                    // Ignora linhas de totalizadores/sumários de planilha
+                    if (rowTextNorm.includes('total de litros') || rowTextNorm.includes('media geral') || !rowTextNorm) {
+                        return;
+                    }
+
+                    globalCounter++;
+
+                    // Mapeia chaves com resiliência
+                    const keys = Object.keys(row);
+                    
+                    const confrariaKey = keys.find(k => normalizarTexto(k).includes('confraria')) || keys[0] || '';
+                    const litrosKey = keys.find(k => {
+                        const nk = normalizarTexto(k);
+                        return nk.includes('litro') || nk.includes('volume') || nk === 'l' || nk.includes('total');
+                    }) || '';
+                    const tipoKey = keys.find(k => {
+                        const nk = normalizarTexto(k);
+                        return nk.includes('estilo') || nk.includes('tipo') || nk.includes('cerveja') || nk.includes('nome');
+                    }) || '';
+
+                    const abvKey = keys.find(k => normalizarTexto(k).includes('abv')) || '';
+                    const ibuKey = keys.find(k => normalizarTexto(k).includes('ibu')) || '';
+                    const ebcKey = keys.find(k => normalizarTexto(k).includes('ebc')) || '';
+
+                    const confraria = String(row[confrariaKey] || 'Outros / Não Informado').trim();
+                    const totalL = parseFloat(String(row[litrosKey] || '0').replace('.', '').replace(',', '.')) || 0;
+                    const tipo = tipoKey && row[tipoKey] ? String(row[tipoKey]).trim() : 'Não Informado';
+
+                    const abv = abvKey ? parseFloat(String(row[abvKey] || '0').replace(',', '.')) || 0 : 0;
+                    const ibu = ibuKey ? parseFloat(String(row[ibuKey] || '0').replace(',', '.')) || 0 : 0;
+                    const ebc = ebcKey ? parseFloat(String(row[ebcKey] || '0').replace(',', '.')) || 0 : 0;
+
+                    dadosBrutosGlobal.push({
+                        id: globalCounter,
+                        abaOrigem: nomeAba,
+                        confraria: confraria,
+                        totalL: totalL,
+                        tipo: tipo,
+                        abv: abv,
+                        ibu: ibu,
+                        ebc: ebc,
+                        rowTextNormalized: rowTextNorm, // Texto totalmente indexado para busca instantânea
+                        raw: row
+                    });
+                });
             });
+
+            colunasUnificadas = Array.from(colSet);
 
             preencherOpcoesFiltros();
             aplicarFiltros();
+
+            mostrarStatus(`Dados indexados com sucesso! ${dadosBrutosGlobal.length} registros encontrados em ${abasEncontradas.length} aba(s).`, 'success');
         }
 
         function preencherOpcoesFiltros() {
             const selectConf = document.getElementById('filter-confraria');
             const selectEstilo = document.getElementById('filter-estilo');
 
-            const confrarias = [...new Set(dadosBrutos.map(d => d.confraria))].filter(Boolean).sort();
-            const estilos = [...new Set(dadosBrutos.map(d => d.tipo))].filter(t => t !== 'Geral' && t !== 'Não Especificado').sort();
+            const confrarias = [...new Set(dadosBrutosGlobal.map(d => d.confraria))].filter(Boolean).sort();
+            const estilos = [...new Set(dadosBrutosGlobal.map(d => d.tipo))].filter(t => t !== 'Não Informado').sort();
 
             selectConf.innerHTML = '<option value="">Todas as Confrarias</option>';
             confrarias.forEach(c => {
@@ -439,25 +539,61 @@
             });
         }
 
+        function alternarEscopoAba() {
+            const valorAba = document.getElementById('filter-aba').value;
+            const tag = document.getElementById('modo-busca-tag');
+
+            if (valorAba === 'TODAS') {
+                tag.innerText = 'Modo: Todas as Abas da Planilha';
+            } else {
+                tag.innerText = `Modo: Apenas Aba "${valorAba}"`;
+            }
+
+            aplicarFiltros();
+        }
+
         function aplicarFiltros() {
-            const search = normalizarTexto(document.getElementById('filter-search').value);
+            const searchNormalized = normalizarTexto(document.getElementById('filter-search').value);
             const confraria = document.getElementById('filter-confraria').value;
+            const abaSelecionada = document.getElementById('filter-aba').value;
             const estilo = document.getElementById('filter-estilo').value;
             const maxAbv = parseFloat(document.getElementById('filter-abv').value);
             const maxIbu = parseFloat(document.getElementById('filter-ibu').value);
             const maxEbc = parseFloat(document.getElementById('filter-ebc').value);
             const apenasPendentes = document.getElementById('filter-pendencias').checked;
 
-            dadosFiltrados = dadosBrutos.filter(d => {
-                const matchSearch = !search || d.searchText.includes(search);
-                const matchConf = !confraria || d.confraria === confraria;
-                const matchEstilo = !estilo || normalizarTexto(d.tipo).includes(normalizarTexto(estilo));
-                const matchAbv = d.abv === 0 || d.abv <= maxAbv;
-                const matchIbu = d.ibu === 0 || d.ibu <= maxIbu;
-                const matchEbc = d.ebc === 0 || d.ebc <= maxEbc;
-                const matchPendente = !apenasPendentes || (d.abv === 0 || d.ibu === 0 || d.ebc === 0);
+            dadosFiltrados = dadosBrutosGlobal.filter(d => {
+                // 1. Filtro por Aba
+                if (abaSelecionada !== 'TODAS' && d.abaOrigem !== abaSelecionada) {
+                    return false;
+                }
 
-                return matchSearch && matchConf && matchEstilo && matchAbv && matchIbu && matchEbc && matchPendente;
+                // 2. Pesquisa de Texto Universal (Procura em TODAS as células indexadas da linha)
+                if (searchNormalized && !d.rowTextNormalized.includes(searchNormalized)) {
+                    return false;
+                }
+
+                // 3. Filtro por Confraria
+                if (confraria && d.confraria !== confraria) {
+                    return false;
+                }
+
+                // 4. Filtro por Estilo
+                if (estilo && normalizarTexto(d.tipo) !== normalizarTexto(estilo)) {
+                    return false;
+                }
+
+                // 5. Filtros Numéricos
+                if (d.abv > 0 && d.abv > maxAbv) return false;
+                if (d.ibu > 0 && d.ibu > maxIbu) return false;
+                if (d.ebc > 0 && d.ebc > maxEbc) return false;
+
+                // 6. Filtro de Incompletos
+                if (apenasPendentes && !(d.abv === 0 || d.ibu === 0 || d.ebc === 0)) {
+                    return false;
+                }
+
+                return true;
             });
 
             atualizarKPIs();
@@ -469,15 +605,16 @@
             document.getElementById('filter-search').value = '';
             document.getElementById('filter-confraria').value = '';
             document.getElementById('filter-estilo').value = '';
-            document.getElementById('filter-abv').value = 15;
-            document.getElementById('val-abv').innerText = '15%';
-            document.getElementById('filter-ibu').value = 120;
-            document.getElementById('val-ibu').innerText = '120';
-            document.getElementById('filter-ebc').value = 80;
-            document.getElementById('val-ebc').innerText = '80';
+            document.getElementById('filter-aba').value = 'TODAS';
+            document.getElementById('filter-abv').value = 18;
+            document.getElementById('val-abv').innerText = '18%';
+            document.getElementById('filter-ibu').value = 150;
+            document.getElementById('val-ibu').innerText = '150';
+            document.getElementById('filter-ebc').value = 100;
+            document.getElementById('val-ebc').innerText = '100';
             document.getElementById('filter-pendencias').checked = false;
 
-            aplicarFiltros();
+            alternarEscopoAba();
         }
 
         function atualizarKPIs() {
@@ -500,53 +637,86 @@
             theaders.innerHTML = '';
             tbody.innerHTML = '';
 
-            tableCount.innerText = `${dadosFiltrados.length} exibidos`;
+            tableCount.innerText = `${dadosFiltrados.length} resultados`;
 
-            if (colunasOriginais.length === 0 || dadosFiltrados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="10" class="py-6 text-center text-gray-500">Nenhum dado encontrado para os filtros aplicados.</td></tr>`;
+            if (dadosFiltrados.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="12" class="py-12 text-center text-gray-500">
+                            <div class="max-w-xs mx-auto space-y-2">
+                                <i class="fa-solid fa-magnifying-glass-slash text-3xl text-gray-300"></i>
+                                <p class="font-medium text-sm text-gray-600">Nenhum resultado encontrado.</p>
+                                <p class="text-xs text-gray-400">Tente buscar por termos mais genéricos ou mudar a aba de pesquisa.</p>
+                            </div>
+                        </td>
+                    </tr>`;
                 return;
             }
 
-            let headerHTML = `<th class="py-3 px-4">Status</th>`;
-            colunasOriginais.forEach(col => {
-                headerHTML += `<th class="py-3 px-4">${col}</th>`;
+            // Descobre colunas presentes no conjunto filtrado para exibir dinamismo limpo
+            let colunasExibir = ['Aba Origem'];
+            dadosFiltrados.forEach(item => {
+                Object.keys(item.raw).forEach(k => {
+                    if (k && k.trim() !== '' && !colunasExibir.includes(k.trim())) {
+                        colunasExibir.push(k.trim());
+                    }
+                });
             });
-            headerHTML += `<th class="py-3 px-4 text-center">Ações</th>`;
+
+            // Monta cabeçalhos
+            let headerHTML = `<th class="py-3 px-4 w-12 text-center">Status</th>`;
+            colunasExibir.forEach(col => {
+                headerHTML += `<th class="py-3 px-4 whitespace-nowrap">${col}</th>`;
+            });
+            headerHTML += `<th class="py-3 px-4 text-center">Degustação</th>`;
             theaders.innerHTML = headerHTML;
 
+            // Monta linhas de registros
             dadosFiltrados.forEach(item => {
-                const avaliacao = JSON.parse(localStorage.getItem(`degustacao_${abaAtual}_${item.id}`) || 'null');
-                const badgeAvaliacao = avaliacao ? `<span class="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded font-semibold"><i class="fa-solid fa-check"></i> Avaliada</span>` : '';
+                const avaliacaoKey = `degustacao_${item.abaOrigem}_${item.id}`;
+                const avaliacao = JSON.parse(localStorage.getItem(avaliacaoKey) || 'null');
+                const badgeAvaliacao = avaliacao 
+                    ? `<span class="bg-emerald-100 text-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold"><i class="fa-solid fa-star"></i> Avaliada</span>` 
+                    : '';
 
-                const pendente = item.abv === 0 || item.ibu === 0 || item.ebc === 0;
+                const pendente = item.abv === 0 || item.ibu === 0;
                 const statusDot = pendente 
-                    ? `<span class="inline-block w-3 h-3 rounded-full bg-amber-500" title="Dados incompletos"></span>` 
-                    : `<span class="inline-block w-3 h-3 rounded-full bg-emerald-500" title="Completo"></span>`;
+                    ? `<span class="inline-block w-2.5 h-2.5 rounded-full bg-amber-400" title="Informações parciais"></span>` 
+                    : `<span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500" title="Registro completo"></span>`;
 
                 let rowHTML = `<td class="py-3 px-4 text-center">${statusDot}</td>`;
-                colunasOriginais.forEach(col => {
-                    let val = item.raw[col] !== undefined ? item.raw[col] : '';
-                    rowHTML += `<td class="py-3 px-4 text-gray-700">${val}</td>`;
+                
+                colunasExibir.forEach(col => {
+                    let val = '';
+                    if (col === 'Aba Origem') {
+                        val = `<span class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded text-[10px] font-bold border border-amber-200">${item.abaOrigem}</span>`;
+                    } else {
+                        val = item.raw[col] !== undefined ? item.raw[col] : '-';
+                    }
+                    rowHTML += `<td class="py-3 px-4 text-gray-700 whitespace-nowrap">${val}</td>`;
                 });
+
                 rowHTML += `
                     <td class="py-3 px-4 text-center">
-                        <button onclick="abrirModal(${item.id})" class="bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs px-3 py-1.5 rounded-md font-medium transition flex items-center gap-1 mx-auto">
-                            <i class="fa-solid fa-star text-amber-500"></i> Avaliar ${badgeAvaliacao}
+                        <button onclick="abrirModal('${item.abaOrigem}', ${item.id})" class="bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs px-2.5 py-1 rounded-lg font-semibold border border-amber-200 transition flex items-center gap-1 mx-auto">
+                            <i class="fa-solid fa-pen-to-square text-amber-600"></i>
+                            ${badgeAvaliacao || 'Avaliar'}
                         </button>
                     </td>
                 `;
 
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-amber-50/50 transition';
+                tr.className = 'hover:bg-amber-50/40 transition border-b border-gray-100/60';
                 tr.innerHTML = rowHTML;
                 tbody.appendChild(tr);
             });
         }
 
         function atualizarGraficos() {
+            // 1. Gráfico de Litros por Confraria
             const litrosPorConf = {};
             dadosFiltrados.forEach(d => {
-                if (d.confraria && d.confraria !== 'N/A') {
+                if (d.confraria && d.confraria !== 'Outros / Não Informado') {
                     litrosPorConf[d.confraria] = (litrosPorConf[d.confraria] || 0) + d.totalL;
                 }
             });
@@ -561,10 +731,10 @@
                 data: {
                     labels: labelsConf,
                     datasets: [{
-                        label: 'Total de Litros',
+                        label: 'Litros Produzidos',
                         data: dataLitros,
                         backgroundColor: '#d97706',
-                        borderRadius: 4
+                        borderRadius: 6
                     }]
                 },
                 options: {
@@ -575,8 +745,9 @@
                 }
             });
 
+            // 2. Gráfico de Dispersão (Scatter)
             const scatterData = dadosFiltrados
-                .filter(d => d.abv > 0 && d.ibu > 0)
+                .filter(d => d.abv > 0 || d.ibu > 0)
                 .map(d => ({ x: d.abv, y: d.ibu, label: `${d.confraria} (${d.tipo})` }));
 
             if (chartScatterInstance) chartScatterInstance.destroy();
@@ -611,15 +782,16 @@
             });
         }
 
-        function abrirModal(id) {
-            const item = dadosBrutos.find(d => d.id === id);
+        function abrirModal(abaOrigem, id) {
+            const item = dadosBrutosGlobal.find(d => d.id === id && d.abaOrigem === abaOrigem);
             if (!item) return;
 
-            document.getElementById('degustacao-id').value = id;
-            document.getElementById('modal-titulo').innerText = `Degustar: ${item.confraria}`;
-            document.getElementById('modal-subtitulo').innerText = `Registro ID: ${id} | Aba: ${abaAtual}`;
+            document.getElementById('degustacao-id').value = `${abaOrigem}_${id}`;
+            document.getElementById('modal-titulo').innerText = `${item.confraria}`;
+            document.getElementById('modal-subtitulo').innerText = `Estilo/Tipo: ${item.tipo} | Aba: ${abaOrigem}`;
 
-            const salvo = JSON.parse(localStorage.getItem(`degustacao_${abaAtual}_${id}`) || 'null');
+            const avaliacaoKey = `degustacao_${abaOrigem}_${id}`;
+            const salvo = JSON.parse(localStorage.getItem(avaliacaoKey) || 'null');
             if (salvo) {
                 document.getElementById('nota-aroma').value = salvo.aroma;
                 document.getElementById('nota-aparencia').value = salvo.aparencia;
@@ -641,7 +813,7 @@
 
         function salvarAvaliacao(event) {
             event.preventDefault();
-            const id = document.getElementById('degustacao-id').value;
+            const keyId = document.getElementById('degustacao-id').value;
 
             const avaliacao = {
                 aroma: document.getElementById('nota-aroma').value,
@@ -652,28 +824,33 @@
                 data: new Date().toISOString()
             };
 
-            localStorage.setItem(`degustacao_${abaAtual}_${id}`, JSON.stringify(avaliacao));
+            localStorage.setItem(`degustacao_${keyId}`, JSON.stringify(avaliacao));
             fecharModal();
             renderizarTabelaDinamica();
-            mostrarStatus('Avaliação salva com sucesso no navegador!', 'success');
+            mostrarStatus('Avaliação sensorial salva com sucesso no navegador!', 'success');
         }
 
         function exportarCSV() {
             if (dadosFiltrados.length === 0) {
-                alert('Nenhum dado para exportar.');
+                mostrarStatus('Nenhum dado para exportar.', 'warning');
                 return;
             }
 
-            const headers = colunasOriginais;
+            const headers = colunasUnificadas;
             const rows = dadosFiltrados.map(d => {
-                return headers.map(h => `"${(d.raw[h] !== undefined ? d.raw[h] : '').toString().replace(/"/g, '""')}"`);
+                return headers.map(h => {
+                    let val = '';
+                    if (h === 'Aba Origem') val = d.abaOrigem;
+                    else val = d.raw[h] !== undefined ? d.raw[h] : '';
+                    return `"${val.toString().replace(/"/g, '""')}"`;
+                });
             });
 
-            const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+            const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement('a');
             link.setAttribute('href', encodedUri);
-            link.setAttribute('download', `cervejas_${abaAtual}_filtrado.csv`);
+            link.setAttribute('download', `cervejas_fdcrj_export.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -682,18 +859,23 @@
         function mostrarStatus(texto, tipo = 'info') {
             const msgBox = document.getElementById('status-message');
             const msgText = document.getElementById('status-text');
+            const msgIcon = document.getElementById('status-icon');
 
             msgText.innerText = texto;
-            msgBox.classList.remove('hidden', 'bg-blue-50', 'text-blue-700', 'bg-green-50', 'text-green-700', 'bg-red-50', 'text-red-700', 'bg-amber-50', 'text-amber-700');
+            msgBox.classList.remove('hidden', 'bg-blue-50', 'text-blue-800', 'border-blue-200', 'bg-emerald-50', 'text-emerald-800', 'border-emerald-200', 'bg-rose-50', 'text-rose-800', 'border-rose-200', 'bg-amber-50', 'text-amber-800', 'border-amber-200');
 
             if (tipo === 'success') {
-                msgBox.classList.add('bg-green-50', 'text-green-700');
+                msgBox.classList.add('bg-emerald-50', 'text-emerald-800', 'border-emerald-200');
+                msgIcon.className = 'fa-solid fa-circle-check text-emerald-600 text-lg';
             } else if (tipo === 'error') {
-                msgBox.classList.add('bg-red-50', 'text-red-700');
+                msgBox.classList.add('bg-rose-50', 'text-rose-800', 'border-rose-200');
+                msgIcon.className = 'fa-solid fa-triangle-exclamation text-rose-600 text-lg';
             } else if (tipo === 'warning') {
-                msgBox.classList.add('bg-amber-50', 'text-amber-700');
+                msgBox.classList.add('bg-amber-50', 'text-amber-800', 'border-amber-200');
+                msgIcon.className = 'fa-solid fa-circle-exclamation text-amber-600 text-lg';
             } else {
-                msgBox.classList.add('bg-blue-50', 'text-blue-700');
+                msgBox.classList.add('bg-blue-50', 'text-blue-800', 'border-blue-200');
+                msgIcon.className = 'fa-solid fa-circle-info text-blue-600 text-lg';
             }
         }
     </script>
